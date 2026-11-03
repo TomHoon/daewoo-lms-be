@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daewoo.lms.training.course.mapper.CourseMapper">
+    <resultMap id="courseResultMap" type="com.daewoo.lms.training.course.dto.CourseDTO" autoMapping="true">
+        <id column="COURSE_ID" property="courseId"/>
+        <result column="TRAINING_JOB_CATEGORY_ID" property="trainingJobCategoryId"/>
+    </resultMap>
+    <select id="trainingJobCategories" resultType="com.daewoo.lms.training.course.dto.CourseOptionDTO">
+        SELECT TRAINING_JOB_CATEGORY_ID AS id, CATEGORY_NAME AS name FROM TRAINING_JOB_CATEGORY WHERE USE_YN = 'Y' AND HIDDEN_YN = 'N' ORDER BY SORT_ORDER, TRAINING_JOB_CATEGORY_ID
+    </select>
+    <select id="educationCategories" resultType="com.daewoo.lms.training.course.dto.CourseOptionDTO">
+        SELECT EDUCATION_CATEGORY_ID AS id, CATEGORY_NAME AS name FROM EDUCATION_COURSE_CATEGORY WHERE USE_YN = 'Y' AND HIDDEN_YN = 'N' ORDER BY SORT_ORDER, EDUCATION_CATEGORY_ID
+    </select>
+    <select id="campuses" resultType="com.daewoo.lms.training.course.dto.CourseOptionDTO">
+        SELECT CAMPUS_ID AS id, CAMPUS_NAME AS name FROM CAMPUS WHERE USE_YN = 'Y' ORDER BY SORT_ORDER, CAMPUS_ID
+    </select>
+    <select id="instructors" resultType="com.daewoo.lms.training.course.dto.CourseOptionDTO">
+        SELECT INSTRUCTOR_ID AS id, NAME AS name FROM INSTRUCTOR WHERE 1 = 1 ORDER BY INSTRUCTOR_ID
+    </select>
+    <select id="courses" resultMap="courseResultMap">
+        SELECT * FROM COURSE WHERE USE_YN = 'Y'
+        <if test="trainingJobCategoryId != null">AND TRAINING_JOB_CATEGORY_ID = #{trainingJobCategoryId}</if>
+        <if test="educationCategoryId != null">AND EDUCATION_CATEGORY_ID = #{educationCategoryId}</if>
+        ORDER BY COURSE_ID DESC
+    </select>
+    <select id="course" resultMap="courseResultMap">
+        SELECT * FROM COURSE WHERE COURSE_ID = #{courseId}
+    </select>
+    <select id="lockCourse" resultMap="courseResultMap">
+        SELECT * FROM COURSE WHERE COURSE_ID = #{courseId} FOR UPDATE
+    </select>
+    <select id="batches" resultType="com.daewoo.lms.training.course.dto.CourseBatchDTO">
+        SELECT * FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} ORDER BY BATCH_ID DESC
+    </select>
+    <select id="batch" resultType="com.daewoo.lms.training.course.dto.CourseBatchDTO">
+        SELECT * FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </select>
+    <select id="batchInstructors" resultType="com.daewoo.lms.training.course.dto.CourseInstructorDTO">
+        SELECT * FROM COURSE_INSTRUCTOR WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} ORDER BY MAIN_YN DESC, INSTRUCTOR_ID
+    </select>
+    <select id="extraInfos" resultType="com.daewoo.lms.training.course.dto.CourseExtraInfoDTO">
+        SELECT * FROM COURSE_BATCH_EXTRA_INFO WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} ORDER BY SORT_ORDER, EXTRA_INFO_ID
+    </select>
+    <select id="days" resultType="string">
+        SELECT DAY_CODE FROM COURSE_DAY_OF_WEEK WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND USE_YN = 'Y' ORDER BY FIELD(DAY_CODE, 'MON','TUE','WED','THU','FRI','SAT','SUN')
+    </select>
+    <select id="nextBatchId" resultType="long">
+        SELECT COALESCE(MAX(BATCH_ID), 0) + 1 FROM COURSE_BATCH WHERE COURSE_ID = #{courseId}
+    </select>
+    <insert id="insertCourse" useGeneratedKeys="true" keyProperty="courseId" keyColumn="COURSE_ID">
+        INSERT INTO COURSE (
+            TRAINING_JOB_CATEGORY_ID, EDUCATION_CATEGORY_ID, COURSE_NAME,
+            COURSE_TYPE, COURSE_DIVISION, COURSE_COLOR, DESCRIPTION, TOTAL_HOURS,
+            INTRODUCTION, QUALIFICATION, TUITION_REFUND_INFO, CURRICULUM_CONTENT,
+            CAREER_PATH, RELATED_CERTIFICATION, USE_YN, CREATED_AT, CREATED_BY
+        ) VALUES (
+            #{trainingJobCategoryId}, #{educationCategoryId}, #{courseName},
+            #{courseType}, #{courseDivision}, #{courseColor}, #{description}, COALESCE(#{totalHours}, 0),
+            #{introduction}, #{qualification}, #{tuitionRefundInfo}, #{curriculumContent},
+            #{careerPath}, #{relatedCertification}, #{useYn}, NOW(), #{createdBy}
+        )
+    </insert>
+    <update id="updateCourse" >
+        UPDATE COURSE
+        <set>
+            <if test="trainingJobCategoryId != null">TRAINING_JOB_CATEGORY_ID = #{trainingJobCategoryId},</if>
+            <if test="educationCategoryId != null">EDUCATION_CATEGORY_ID = #{educationCategoryId},</if>
+            <if test="courseName != null">COURSE_NAME = #{courseName},</if>
+            <if test="courseType != null">COURSE_TYPE = #{courseType},</if>
+            <if test="courseDivision != null">COURSE_DIVISION = #{courseDivision},</if>
+            <if test="courseColor != null">COURSE_COLOR = #{courseColor},</if>
+            <if test="description != null">DESCRIPTION = #{description},</if>
+            <if test="totalHours != null">TOTAL_HOURS = #{totalHours},</if>
+            <if test="introduction != null">INTRODUCTION = #{introduction},</if>
+            <if test="qualification != null">QUALIFICATION = #{qualification},</if>
+            <if test="tuitionRefundInfo != null">TUITION_REFUND_INFO = #{tuitionRefundInfo},</if>
+            <if test="curriculumContent != null">CURRICULUM_CONTENT = #{curriculumContent},</if>
+            <if test="careerPath != null">CAREER_PATH = #{careerPath},</if>
+            <if test="relatedCertification != null">RELATED_CERTIFICATION = #{relatedCertification},</if>
+            <if test="useYn != null">USE_YN = #{useYn},</if>
+            <if test="updatedBy != null">UPDATED_BY = #{updatedBy},</if>
+            UPDATED_AT = NOW()
+        </set>
+        WHERE COURSE_ID = #{courseId}
+    </update>
+    <update id="updateBatch" >
+        UPDATE COURSE_BATCH
+        <set>
+            <if test="batchNo != null">BATCH_NO = #{batchNo},</if>
+            <if test="batchName != null">BATCH_NAME = #{batchName},</if>
+            <if test="campusId != null">CAMPUS_ID = #{campusId},</if>
+            <if test="trainingCode != null">TRAINING_CODE = #{trainingCode},</if>
+            <if test="status != null">STATUS = #{status},</if>
+            <if test="recruitType != null">RECRUIT_TYPE = #{recruitType},</if>
+            <if test="startDate != null">START_DATE = #{startDate},</if>
+            <if test="endDate != null">END_DATE = #{endDate},</if>
+            <if test="recruitCount != null">RECRUIT_COUNT = #{recruitCount},</if>
+            <if test="approvalCount != null">APPROVAL_COUNT = #{approvalCount},</if>
+            <if test="tuitionAmount != null">TUITION_AMOUNT = #{tuitionAmount},</if>
+            <if test="tuitionVisibleYn != null">TUITION_VISIBLE_YN = #{tuitionVisibleYn},</if>
+            <if test="govSupportAmount != null">GOV_SUPPORT_AMOUNT = #{govSupportAmount},</if>
+            <if test="selfPaymentDesc != null">SELF_PAYMENT_DESC = #{selfPaymentDesc},</if>
+            <if test="allowanceType != null">ALLOWANCE_TYPE = #{allowanceType},</if>
+            <if test="allowanceAmount != null">ALLOWANCE_AMOUNT = #{allowanceAmount},</if>
+            <if test="allowanceDesc != null">ALLOWANCE_DESC = #{allowanceDesc},</if>
+            <if test="representativeFileId != null">REPRESENTATIVE_FILE_ID = #{representativeFileId},</if>
+            <if test="classStartTime != null">CLASS_START_TIME = #{classStartTime},</if>
+            <if test="classEndTime != null">CLASS_END_TIME = #{classEndTime},</if>
+            <if test="dailyHours != null">DAILY_HOURS = #{dailyHours},</if>
+            <if test="trainingDays != null">TRAINING_DAYS = #{trainingDays},</if>
+            <if test="trainingPlace != null">TRAINING_PLACE = #{trainingPlace},</if>
+            <if test="hrdLink != null">HRD_LINK = #{hrdLink},</if>
+            <if test="studentRecordOpenYn != null">STUDENT_RECORD_OPEN_YN = #{studentRecordOpenYn},</if>
+            <if test="ledgerVisibleYn != null">LEDGER_VISIBLE_YN = #{ledgerVisibleYn},</if>
+            <if test="updatedBy != null">UPDATED_BY = #{updatedBy},</if>
+            UPDATED_AT = NOW()
+        </set>
+        WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </update>
+    <insert id="insertBatch" >
+        INSERT INTO COURSE_BATCH
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">COURSE_ID,</if>
+            <if test="batchId != null">BATCH_ID,</if>
+            <if test="batchNo != null">BATCH_NO,</if>
+            <if test="batchName != null">BATCH_NAME,</if>
+            <if test="campusId != null">CAMPUS_ID,</if>
+            <if test="trainingCode != null">TRAINING_CODE,</if>
+            <if test="status != null">STATUS,</if>
+            <if test="recruitType != null">RECRUIT_TYPE,</if>
+            <if test="startDate != null">START_DATE,</if>
+            <if test="endDate != null">END_DATE,</if>
+            <if test="recruitCount != null">RECRUIT_COUNT,</if>
+            <if test="approvalCount != null">APPROVAL_COUNT,</if>
+            <if test="tuitionAmount != null">TUITION_AMOUNT,</if>
+            <if test="tuitionVisibleYn != null">TUITION_VISIBLE_YN,</if>
+            <if test="govSupportAmount != null">GOV_SUPPORT_AMOUNT,</if>
+            <if test="selfPaymentDesc != null">SELF_PAYMENT_DESC,</if>
+            <if test="allowanceType != null">ALLOWANCE_TYPE,</if>
+            <if test="allowanceAmount != null">ALLOWANCE_AMOUNT,</if>
+            <if test="allowanceDesc != null">ALLOWANCE_DESC,</if>
+            <if test="representativeFileId != null">REPRESENTATIVE_FILE_ID,</if>
+            <if test="classStartTime != null">CLASS_START_TIME,</if>
+            <if test="classEndTime != null">CLASS_END_TIME,</if>
+            <if test="dailyHours != null">DAILY_HOURS,</if>
+            <if test="trainingDays != null">TRAINING_DAYS,</if>
+            <if test="trainingPlace != null">TRAINING_PLACE,</if>
+            <if test="hrdLink != null">HRD_LINK,</if>
+            <if test="studentRecordOpenYn != null">STUDENT_RECORD_OPEN_YN,</if>
+            <if test="ledgerVisibleYn != null">LEDGER_VISIBLE_YN,</if>
+            <if test="clickCount != null">CLICK_COUNT,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="batchNo != null">#{batchNo},</if>
+            <if test="batchName != null">#{batchName},</if>
+            <if test="campusId != null">#{campusId},</if>
+            <if test="trainingCode != null">#{trainingCode},</if>
+            <if test="status != null">#{status},</if>
+            <if test="recruitType != null">#{recruitType},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="recruitCount != null">#{recruitCount},</if>
+            <if test="approvalCount != null">#{approvalCount},</if>
+            <if test="tuitionAmount != null">#{tuitionAmount},</if>
+            <if test="tuitionVisibleYn != null">#{tuitionVisibleYn},</if>
+            <if test="govSupportAmount != null">#{govSupportAmount},</if>
+            <if test="selfPaymentDesc != null">#{selfPaymentDesc},</if>
+            <if test="allowanceType != null">#{allowanceType},</if>
+            <if test="allowanceAmount != null">#{allowanceAmount},</if>
+            <if test="allowanceDesc != null">#{allowanceDesc},</if>
+            <if test="representativeFileId != null">#{representativeFileId},</if>
+            <if test="classStartTime != null">#{classStartTime},</if>
+            <if test="classEndTime != null">#{classEndTime},</if>
+            <if test="dailyHours != null">#{dailyHours},</if>
+            <if test="trainingDays != null">#{trainingDays},</if>
+            <if test="trainingPlace != null">#{trainingPlace},</if>
+            <if test="hrdLink != null">#{hrdLink},</if>
+            <if test="studentRecordOpenYn != null">#{studentRecordOpenYn},</if>
+            <if test="ledgerVisibleYn != null">#{ledgerVisibleYn},</if>
+            <if test="clickCount != null">#{clickCount},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertInstructor" >
+        INSERT INTO COURSE_INSTRUCTOR
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">COURSE_ID,</if>
+            <if test="batchId != null">BATCH_ID,</if>
+            <if test="instructorId != null">INSTRUCTOR_ID,</if>
+            <if test="mainYn != null">MAIN_YN,</if>
+            <if test="startDate != null">START_DATE,</if>
+            <if test="endDate != null">END_DATE,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="instructorId != null">#{instructorId},</if>
+            <if test="mainYn != null">#{mainYn},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertExtraInfo" >
+        INSERT INTO COURSE_BATCH_EXTRA_INFO
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">COURSE_ID,</if>
+            <if test="batchId != null">BATCH_ID,</if>
+            <if test="extraInfoId != null">EXTRA_INFO_ID,</if>
+            <if test="itemName != null">ITEM_NAME,</if>
+            <if test="itemValue != null">ITEM_VALUE,</if>
+            <if test="sortOrder != null">SORT_ORDER,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="extraInfoId != null">#{extraInfoId},</if>
+            <if test="itemName != null">#{itemName},</if>
+            <if test="itemValue != null">#{itemValue},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertFile" useGeneratedKeys="true" keyProperty="fileId">
+        INSERT INTO FILES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="refType != null">REF_TYPE,</if>
+            <if test="refId != null">REF_ID,</if>
+            <if test="originalFileName != null">ORIGINAL_FILE_NAME,</if>
+            <if test="savedFileName != null">SAVED_FILE_NAME,</if>
+            <if test="filePath != null">FILE_PATH,</if>
+            <if test="fileSize != null">FILE_SIZE,</if>
+            <if test="fileExtension != null">FILE_EXTENSION,</if>
+            <if test="mimeType != null">MIME_TYPE,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="refType != null">#{refType},</if>
+            <if test="refId != null">#{refId},</if>
+            <if test="originalFileName != null">#{originalFileName},</if>
+            <if test="savedFileName != null">#{savedFileName},</if>
+            <if test="filePath != null">#{filePath},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="fileExtension != null">#{fileExtension},</if>
+            <if test="mimeType != null">#{mimeType},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertDay" >
+        INSERT INTO COURSE_DAY_OF_WEEK (COURSE_ID, BATCH_ID, DAY_CODE, USE_YN, CREATED_AT, CREATED_BY) VALUES (#{courseId}, #{batchId}, #{day}, 'Y', NOW(), #{createdBy})
+    </insert>
+    <delete id="deleteDays" >
+        DELETE FROM COURSE_DAY_OF_WEEK WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </delete>
+    <delete id="deleteInstructors" >
+        DELETE FROM COURSE_INSTRUCTOR WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </delete>
+    <delete id="deleteExtraInfos" >
+        DELETE FROM COURSE_BATCH_EXTRA_INFO WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </delete>
+    <delete id="deleteBatch" >
+        DELETE FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </delete>
+    <delete id="deleteBatchDrafts" >
+        DELETE FROM COURSE_REGISTRATION_DRAFT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </delete>
+    <select id="file" resultType="com.daewoo.lms.training.course.dto.CourseFileDTO">
+        SELECT * FROM FILES WHERE FILE_ID = #{fileId}
+    </select>
+    <select id="drafts" resultType="com.daewoo.lms.training.course.dto.CourseDraftDTO">
+        SELECT DRAFT_ID, COURSE_ID, BATCH_ID, CREATED_AT, UPDATED_AT FROM COURSE_REGISTRATION_DRAFT <where><if test="courseId != null">COURSE_ID = #{courseId}</if></where> ORDER BY UPDATED_AT DESC
+    </select>
+    <select id="draft" resultType="com.daewoo.lms.training.course.dto.CourseDraftDTO">
+        SELECT * FROM COURSE_REGISTRATION_DRAFT WHERE DRAFT_ID = #{draftId}
+    </select>
+    <select id="lockDraft" resultType="com.daewoo.lms.training.course.dto.CourseDraftDTO">
+        SELECT * FROM COURSE_REGISTRATION_DRAFT WHERE DRAFT_ID = #{draftId} FOR UPDATE
+    </select>
+    <insert id="insertDraft" useGeneratedKeys="true" keyProperty="draftId">
+        INSERT INTO COURSE_REGISTRATION_DRAFT (COURSE_ID, BATCH_ID, PAYLOAD, CREATED_AT, UPDATED_AT) VALUES (#{courseId}, #{batchId}, #{payload}, NOW(), NOW())
+    </insert>
+    <update id="updateDraft" >
+        UPDATE COURSE_REGISTRATION_DRAFT SET PAYLOAD = #{payload}, UPDATED_AT = NOW() WHERE DRAFT_ID = #{draftId}
+    </update>
+    <delete id="deleteDraft" >
+        DELETE FROM COURSE_REGISTRATION_DRAFT WHERE DRAFT_ID = #{draftId}
+    </delete>
+    <select id="existsReference" resultType="int">
+        SELECT COUNT(*) FROM
+        <choose>
+            <when test="type == 'trainingJobCategory'">TRAINING_JOB_CATEGORY WHERE TRAINING_JOB_CATEGORY_ID</when>
+            <when test="type == 'educationCategory'">EDUCATION_COURSE_CATEGORY WHERE EDUCATION_CATEGORY_ID</when>
+            <when test="type == 'campus'">CAMPUS WHERE CAMPUS_ID</when>
+            <otherwise>INSTRUCTOR WHERE INSTRUCTOR_ID</otherwise>
+        </choose>
+        = #{id}
+    </select>
+    <update id="clearRepresentativeFile">
+        UPDATE COURSE_BATCH SET REPRESENTATIVE_FILE_ID = NULL
+        WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </update>
+</mapper>

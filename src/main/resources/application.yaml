@@ -32,3 +32,16 @@ server:
 
 file:
   upload-dir: uploads
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+  paths-to-match: /api/**

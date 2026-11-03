@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daewoo.lms.training.assessmentPaper.mapper.AssessmentPaperMapper">
+    <select id="questions" resultType="com.daewoo.lms.training.assessmentPaper.dto.PaperQuestionDTO">
+        SELECT * FROM QUESTION WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} <if test="!includeDeleted">AND DELETED_YN = 'N'</if> ORDER BY QUESTION_NO, QUESTION_ID
+    </select>
+    <select id="options" resultType="com.daewoo.lms.training.assessmentPaper.dto.PaperOptionDTO">
+        SELECT * FROM QUESTION_OPTION WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} AND QUESTION_ID = #{key.questionId} <if test="!includeDeleted">AND DELETED_YN = 'N'</if> ORDER BY OPTION_NO, OPTION_ID
+    </select>
+    <select id="nextQuestionId" resultType="long">
+        SELECT COALESCE(MAX(QUESTION_ID), 0) + 1 FROM QUESTION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </select>
+    <insert id="insertQuestion" >
+        INSERT INTO QUESTION (COURSE_ID, BATCH_ID, ASSESSMENT_ID, QUESTION_ID, QUESTION_NO, QUESTION_TYPE, QUESTION_TEXT, SCORE, CORRECT_ANSWER, EXPLANATION, DELETED_YN, CREATED_BY, UPDATED_BY, CREATED_AT) VALUES (#{courseId}, #{batchId}, #{assessmentId}, #{questionId}, #{questionNo}, #{questionType}, #{questionText}, #{score}, #{correctAnswer}, #{explanation}, #{deletedYn}, #{createdBy}, #{updatedBy}, NOW())
+    </insert>
+    <update id="updateQuestion" >
+        UPDATE QUESTION SET QUESTION_NO = #{questionNo}, QUESTION_TYPE = #{questionType}, QUESTION_TEXT = #{questionText}, SCORE = #{score}, CORRECT_ANSWER = #{correctAnswer}, EXPLANATION = #{explanation}, DELETED_YN = #{deletedYn}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} AND QUESTION_ID = #{questionId}
+    </update>
+    <select id="nextOptionId" resultType="long">
+        SELECT COALESCE(MAX(OPTION_ID), 0) + 1 FROM QUESTION_OPTION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} AND QUESTION_ID = #{questionId}
+    </select>
+    <insert id="insertOption" >
+        INSERT INTO QUESTION_OPTION (COURSE_ID, BATCH_ID, ASSESSMENT_ID, QUESTION_ID, OPTION_ID, OPTION_NO, OPTION_TEXT, CORRECT_YN, DELETED_YN, CREATED_BY, UPDATED_BY, CREATED_AT) VALUES (#{courseId}, #{batchId}, #{assessmentId}, #{questionId}, #{optionId}, #{optionNo}, #{optionText}, #{correctYn}, #{deletedYn}, #{createdBy}, #{updatedBy}, NOW())
+    </insert>
+    <update id="updateOption" >
+        UPDATE QUESTION_OPTION SET OPTION_NO = #{optionNo}, OPTION_TEXT = #{optionText}, CORRECT_YN = #{correctYn}, DELETED_YN = #{deletedYn}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} AND QUESTION_ID = #{questionId} AND OPTION_ID = #{optionId}
+    </update>
+    <update id="disableMissingQuestions" >
+        UPDATE QUESTION SET DELETED_YN = 'Y', UPDATED_BY = #{key.updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} AND DELETED_YN = 'N' <if test="!ids.isEmpty()">AND QUESTION_ID NOT IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </update>
+    <update id="disableMissingQuestionOptions" >
+        UPDATE QUESTION_OPTION SET DELETED_YN = 'Y', UPDATED_BY = #{key.updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} AND DELETED_YN = 'N' <if test="!ids.isEmpty()">AND QUESTION_ID NOT IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </update>
+    <update id="disableMissingOptions" >
+        UPDATE QUESTION_OPTION SET DELETED_YN = 'Y', UPDATED_BY = #{key.updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} AND QUESTION_ID = #{key.questionId} AND DELETED_YN = 'N' <if test="!ids.isEmpty()">AND OPTION_ID NOT IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </update>
+</mapper>

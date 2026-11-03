@@ -8,8 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @MapperScan("com.daewoo.lms.training.*.mapper")
 public class TrainingApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TrainingApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(TrainingApplication.class, args);
+    }
 }

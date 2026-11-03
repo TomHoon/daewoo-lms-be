@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daewoo.lms.training.ncs.mapper.NcsMapper">
+    <select id="context" resultType="com.daewoo.lms.training.ncs.dto.NcsContextDTO">
+        SELECT c.COURSE_ID, b.BATCH_ID, c.COURSE_NAME, b.BATCH_NAME, b.START_DATE, b.END_DATE, b.STATUS
+        FROM COURSE c JOIN COURSE_BATCH b ON b.COURSE_ID = c.COURSE_ID
+        WHERE b.COURSE_ID = #{courseId} AND b.BATCH_ID = #{batchId}
+    </select>
+    <select id="lockBatch" resultType="long">
+        SELECT BATCH_ID FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} FOR UPDATE
+    </select>
+    <select id="subjects" resultType="com.daewoo.lms.training.ncs.dto.NcsSubjectDTO">
+        SELECT * FROM SUBJECT WHERE COURSE_ID = #{courseId} AND USE_YN = 'Y' ORDER BY SORT_ORDER, SUBJECT_ID
+    </select>
+    <select id="subject" resultType="com.daewoo.lms.training.ncs.dto.NcsSubjectDTO">
+        SELECT * FROM SUBJECT WHERE COURSE_ID = #{courseId} AND SUBJECT_ID = #{subjectId}
+    </select>
+    <select id="units" resultType="com.daewoo.lms.training.ncs.dto.NcsUnitDTO">
+        SELECT * FROM NCS_UNIT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+        <if test="subjectId != null">AND SUBJECT_ID = #{subjectId}</if>
+        <if test="!includeInactive">AND USE_YN = 'Y'</if>
+        ORDER BY SUBJECT_ID, SORT_ORDER, UNIT_ID
+    </select>
+    <select id="unit" resultType="com.daewoo.lms.training.ncs.dto.NcsUnitDTO">
+        SELECT * FROM NCS_UNIT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId}
+    </select>
+    <select id="elements" resultType="com.daewoo.lms.training.ncs.dto.NcsElementDTO">
+        SELECT * FROM NCS_UNIT_ELEMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND USE_YN = 'Y' ORDER BY SORT_ORDER, ELEMENT_ID
+    </select>
+    <select id="element" resultType="com.daewoo.lms.training.ncs.dto.NcsElementDTO">
+        SELECT * FROM NCS_UNIT_ELEMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND ELEMENT_ID = #{elementId}
+    </select>
+    <select id="nextUnitId" resultType="long">
+        SELECT COALESCE(MAX(UNIT_ID), 0) + 1 FROM NCS_UNIT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId}
+    </select>
+    <select id="nextElementId" resultType="long">
+        SELECT COALESCE(MAX(ELEMENT_ID), 0) + 1 FROM NCS_UNIT_ELEMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId}
+    </select>
+    <insert id="insertUnit" >
+        INSERT INTO NCS_UNIT (COURSE_ID, BATCH_ID, SUBJECT_ID, UNIT_ID, UNIT_NAME, CLASSIFICATION_NO, TRAINING_HOURS, NON_NCS_YN, PRE_ASSESSMENT_YN, MIXED_TYPE_YN, SORT_ORDER, USE_YN, CREATED_BY, CREATED_AT)
+        VALUES (#{courseId}, #{batchId}, #{subjectId}, #{unitId}, #{unitName}, #{classificationNo}, #{trainingHours}, #{nonNcsYn}, #{preAssessmentYn}, #{mixedTypeYn}, #{sortOrder}, #{useYn}, #{createdBy}, NOW())
+    </insert>
+    <update id="updateUnit" >
+        UPDATE NCS_UNIT SET UNIT_NAME = #{unitName}, CLASSIFICATION_NO = #{classificationNo}, TRAINING_HOURS = #{trainingHours}, NON_NCS_YN = #{nonNcsYn}, PRE_ASSESSMENT_YN = #{preAssessmentYn}, MIXED_TYPE_YN = #{mixedTypeYn}, SORT_ORDER = #{sortOrder}, USE_YN = #{useYn}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId}
+    </update>
+    <insert id="insertElement" >
+        INSERT INTO NCS_UNIT_ELEMENT (COURSE_ID, BATCH_ID, SUBJECT_ID, UNIT_ID, ELEMENT_ID, ELEMENT_NAME, SORT_ORDER, USE_YN, CREATED_BY, CREATED_AT)
+        VALUES (#{courseId}, #{batchId}, #{subjectId}, #{unitId}, #{elementId}, #{elementName}, #{sortOrder}, #{useYn}, #{createdBy}, NOW())
+    </insert>
+    <update id="updateElement" >
+        UPDATE NCS_UNIT_ELEMENT SET ELEMENT_NAME = #{elementName}, SORT_ORDER = #{sortOrder}, USE_YN = #{useYn}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND ELEMENT_ID = #{elementId}
+    </update>
+    <update id="disableUnit" >
+        UPDATE NCS_UNIT SET USE_YN = 'N', UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND USE_YN = 'Y'
+    </update>
+    <update id="disableElements" >
+        UPDATE NCS_UNIT_ELEMENT SET USE_YN = 'N', UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND USE_YN = 'Y'
+    </update>
+    <update id="disableElement" >
+        UPDATE NCS_UNIT_ELEMENT SET USE_YN = 'N', UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND SUBJECT_ID = #{subjectId} AND UNIT_ID = #{unitId} AND ELEMENT_ID = #{elementId} AND USE_YN = 'Y'
+    </update>
+    <update id="disableMissingElements" >
+        UPDATE NCS_UNIT_ELEMENT SET USE_YN = 'N', UPDATED_BY = #{key.updatedBy}, UPDATED_AT = NOW()
+        WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND SUBJECT_ID = #{key.subjectId} AND UNIT_ID = #{key.unitId}
+        AND USE_YN = 'Y'
+        <if test="elementIds != null and !elementIds.isEmpty()">
+            AND ELEMENT_ID NOT IN <foreach collection="elementIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </if>
+    </update>
+</mapper>

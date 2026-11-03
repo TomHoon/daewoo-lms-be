@@ -4,11 +4,12 @@
 
 <mapper namespace="com.daewoo.lms.training.educationCourseCategory.mapper.EducationCourseCategoryMapper">
 
-    <select id="getAll">
-        SELECT
-            *
-        FROM
-            EDUCATION_COURSE_CATEGORY ecc
+    <select id="getAll" resultType="com.daewoo.lms.training.educationCourseCategory.dto.EducationCourseDTO">
+        SELECT EDUCATION_CATEGORY_ID, CATEGORY_NAME, SORT_ORDER,
+               HIDDEN_YN, USE_YN,
+               CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY
+        FROM EDUCATION_COURSE_CATEGORY
+        ORDER BY SORT_ORDER, EDUCATION_CATEGORY_ID
     </select>
 
     <insert id="createEcc">

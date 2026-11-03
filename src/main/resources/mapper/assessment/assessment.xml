@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daewoo.lms.training.assessment.mapper.AssessmentMapper">
+    <select id="lockBatch" resultType="long">
+        SELECT BATCH_ID FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} FOR UPDATE
+    </select>
+    <select id="list" resultType="com.daewoo.lms.training.assessment.dto.AssessmentDTO">
+        SELECT COURSE_ID, BATCH_ID, ASSESSMENT_ID, PLAN_ID, SUBJECT_ID, UNIT_ID, ELEMENT_ID, TARGET_LEVEL, ASSESSMENT_NAME, ASSESSMENT_TYPE, TOOL_TYPE, SHEET_TYPE, AUTHOR_INSTRUCTOR_ID, ASSESSMENT_DATE, START_DATETIME, END_DATETIME, EXAM_MINUTES, TOTAL_SCORE, PASS_SCORE, SELF_DIAGNOSIS_YN, RETEST_YN, RETEST_NO, BASE_ASSESSMENT_ID, RETEST_BONUS_RATE, STATUS, DESCRIPTION, CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY FROM ASSESSMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} <if test="status != null and status != ''">AND STATUS = #{status}</if> ORDER BY ASSESSMENT_ID DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="get" resultType="com.daewoo.lms.training.assessment.dto.AssessmentDTO">
+        SELECT * FROM ASSESSMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </select>
+    <select id="nextId" resultType="long">
+        SELECT COALESCE(MAX(ASSESSMENT_ID), 0) + 1 FROM ASSESSMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </select>
+    <select id="nextRetestNo" resultType="int">
+        SELECT COALESCE(MAX(RETEST_NO), 0) + 1 FROM ASSESSMENT WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND BASE_ASSESSMENT_ID = #{baseAssessmentId}
+    </select>
+    <insert id="insert" >
+        INSERT INTO ASSESSMENT (COURSE_ID, BATCH_ID, ASSESSMENT_ID, PLAN_ID, SUBJECT_ID, UNIT_ID, ELEMENT_ID, TARGET_LEVEL, ASSESSMENT_NAME, ASSESSMENT_TYPE, TOOL_TYPE, SHEET_TYPE, AUTHOR_INSTRUCTOR_ID, ASSESSMENT_DATE, START_DATETIME, END_DATETIME, EXAM_MINUTES, TOTAL_SCORE, PASS_SCORE, PASSWORD, SELF_DIAGNOSIS_YN, RETEST_YN, RETEST_NO, BASE_ASSESSMENT_ID, RETEST_BONUS_RATE, STATUS, DESCRIPTION, CREATED_BY, UPDATED_BY, CREATED_AT) VALUES (#{courseId}, #{batchId}, #{assessmentId}, #{planId}, #{subjectId}, #{unitId}, #{elementId}, #{targetLevel}, #{assessmentName}, #{assessmentType}, #{toolType}, #{sheetType}, #{authorInstructorId}, #{assessmentDate}, #{startDatetime}, #{endDatetime}, #{examMinutes}, #{totalScore}, #{passScore}, #{password}, #{selfDiagnosisYn}, #{retestYn}, #{retestNo}, #{baseAssessmentId}, #{retestBonusRate}, #{status}, #{description}, #{createdBy}, #{updatedBy}, NOW())
+    </insert>
+    <update id="update" >
+        UPDATE ASSESSMENT SET PLAN_ID = #{planId}, SUBJECT_ID = #{subjectId}, UNIT_ID = #{unitId}, ELEMENT_ID = #{elementId}, TARGET_LEVEL = #{targetLevel}, ASSESSMENT_NAME = #{assessmentName}, ASSESSMENT_TYPE = #{assessmentType}, TOOL_TYPE = #{toolType}, SHEET_TYPE = #{sheetType}, AUTHOR_INSTRUCTOR_ID = #{authorInstructorId}, ASSESSMENT_DATE = #{assessmentDate}, START_DATETIME = #{startDatetime}, END_DATETIME = #{endDatetime}, EXAM_MINUTES = #{examMinutes}, TOTAL_SCORE = #{totalScore}, PASS_SCORE = #{passScore}, PASSWORD = #{password}, SELF_DIAGNOSIS_YN = #{selfDiagnosisYn}, RETEST_YN = #{retestYn}, RETEST_NO = #{retestNo}, BASE_ASSESSMENT_ID = #{baseAssessmentId}, RETEST_BONUS_RATE = #{retestBonusRate}, STATUS = #{status}, DESCRIPTION = #{description}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </update>
+    <insert id="insertSheet" >
+        INSERT INTO ASSESSMENT_SHEET (COURSE_ID, BATCH_ID, ASSESSMENT_ID, SHEET_ID, SHEET_NAME, SHEET_TYPE, QUESTION_COUNT, DESCRIPTION, STATUS, CREATED_BY, UPDATED_BY, CREATED_AT) VALUES (#{courseId}, #{batchId}, #{assessmentId}, #{sheetId}, #{sheetName}, #{sheetType}, #{questionCount}, #{description}, #{status}, #{createdBy}, #{updatedBy}, NOW())
+    </insert>
+    <update id="updateSheet" >
+        UPDATE ASSESSMENT_SHEET SET SHEET_NAME = #{sheetName}, SHEET_TYPE = #{sheetType}, QUESTION_COUNT = #{questionCount}, DESCRIPTION = #{description}, STATUS = #{status}, UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} AND SHEET_ID = #{sheetId}
+    </update>
+    <insert id="insertLevel" >
+        INSERT INTO ASSESSMENT_PERFORMANCE_LEVEL (COURSE_ID, BATCH_ID, ASSESSMENT_ID, LEVEL_ID, MIN_SCORE, DESCRIPTION, SORT_ORDER, CREATED_AT) VALUES (#{courseId}, #{batchId}, #{assessmentId}, #{levelId}, #{minScore}, #{description}, #{sortOrder}, NOW())
+    </insert>
+    <update id="updateLevel" >
+        UPDATE ASSESSMENT_PERFORMANCE_LEVEL SET MIN_SCORE = #{minScore}, DESCRIPTION = #{description}, SORT_ORDER = #{sortOrder}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} AND LEVEL_ID = #{levelId}
+    </update>
+    <update id="cancel" >
+        UPDATE ASSESSMENT SET STATUS = 'CANCEL', UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </update>
+    <select id="candidates" resultType="com.daewoo.lms.training.assessment.dto.AssessmentCandidateDTO">
+        SELECT t.TRAINEE_ID, t.NAME, ct.STATUS FROM COURSE_TRAINEE ct JOIN TRAINEE t ON t.TRAINEE_ID = ct.TRAINEE_ID WHERE ct.COURSE_ID = #{courseId} AND ct.BATCH_ID = #{batchId} AND ct.STATUS = 'TRAINING' ORDER BY t.NAME, t.TRAINEE_ID
+    </select>
+    <select id="eligible" resultType="int">
+        SELECT COUNT(*) FROM COURSE_TRAINEE WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND TRAINEE_ID = #{traineeId} AND STATUS = 'TRAINING'
+    </select>
+    <select id="authorExists" resultType="int">
+        SELECT COUNT(*) FROM COURSE_INSTRUCTOR WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND INSTRUCTOR_ID = #{authorInstructorId}
+    </select>
+    <select id="planExists" resultType="int">
+        SELECT COUNT(*) FROM ASSESSMENT_PLAN WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND PLAN_ID = #{planId}
+    </select>
+    <select id="targets" resultType="com.daewoo.lms.training.assessment.dto.AssessmentTargetDTO">
+        SELECT a.*, t.NAME AS TRAINEE_NAME FROM ASSESSMENT_TARGET a LEFT JOIN TRAINEE t ON t.TRAINEE_ID = a.TRAINEE_ID WHERE a.COURSE_ID = #{courseId} AND a.BATCH_ID = #{batchId} AND a.ASSESSMENT_ID = #{assessmentId} ORDER BY a.TRAINEE_ID
+    </select>
+    <insert id="saveTarget" >
+        INSERT INTO ASSESSMENT_TARGET (COURSE_ID, BATCH_ID, ASSESSMENT_ID, TRAINEE_ID, TARGET_STATUS, RETEST_TARGET_YN, CREATED_AT)
+        VALUES (#{key.courseId}, #{key.batchId}, #{key.assessmentId}, #{traineeId}, 'READY', #{key.retestYn}, NOW())
+        ON DUPLICATE KEY UPDATE TARGET_STATUS = IF(TARGET_STATUS = 'COMPLETE', 'COMPLETE', 'READY')
+    </insert>
+    <update id="excludeTargets" >
+        UPDATE ASSESSMENT_TARGET SET TARGET_STATUS = 'EXCLUDED' WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} AND TARGET_STATUS != 'COMPLETE' <if test="!traineeIds.isEmpty()">AND TRAINEE_ID NOT IN <foreach collection="traineeIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </update>
+    <select id="sheets" resultType="com.daewoo.lms.training.assessment.dto.AssessmentSheetDTO">
+        SELECT * FROM ASSESSMENT_SHEET WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} ORDER BY SHEET_ID
+    </select>
+    <select id="nextSheetId" resultType="long">
+        SELECT COALESCE(MAX(SHEET_ID), 0) + 1 FROM ASSESSMENT_SHEET WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </select>
+    <delete id="removeSheets" >
+        DELETE FROM ASSESSMENT_SHEET WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} <if test="!ids.isEmpty()">AND SHEET_ID NOT IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </delete>
+    <select id="levels" resultType="com.daewoo.lms.training.assessment.dto.AssessmentLevelDTO">
+        SELECT * FROM ASSESSMENT_PERFORMANCE_LEVEL WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId} ORDER BY SORT_ORDER, LEVEL_ID
+    </select>
+    <select id="nextLevelId" resultType="long">
+        SELECT COALESCE(MAX(LEVEL_ID), 0) + 1 FROM ASSESSMENT_PERFORMANCE_LEVEL WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND ASSESSMENT_ID = #{assessmentId}
+    </select>
+    <delete id="removeLevels" >
+        DELETE FROM ASSESSMENT_PERFORMANCE_LEVEL WHERE COURSE_ID = #{key.courseId} AND BATCH_ID = #{key.batchId} AND ASSESSMENT_ID = #{key.assessmentId} <if test="!ids.isEmpty()">AND LEVEL_ID NOT IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+    </delete>
+</mapper>

@@ -4,7 +4,16 @@
 
 <mapper namespace="com.daewoo.lms.training.trainingJobCategory.mapper.TrainingJobCategoryMapper">
 
-    <select id="getMonthAttendance">
+    <resultMap id="trainingJobCategoryResultMap" type="com.daewoo.lms.training.trainingJobCategory.dto.TrainingJobCategoryDTO" autoMapping="true">
+        <id column="TRAINING_JOB_CATEGORY_ID" property="trainingJobCategoryId"/>
+    </resultMap>
+
+    <select id="getAll" resultMap="trainingJobCategoryResultMap">
+        SELECT TRAINING_JOB_CATEGORY_ID, CATEGORY_NAME, SORT_ORDER,
+               INCUMBENT_YN, HIDDEN_YN, USE_YN,
+               CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY
+        FROM TRAINING_JOB_CATEGORY
+        ORDER BY SORT_ORDER, TRAINING_JOB_CATEGORY_ID
     </select>
 
     <insert id="createTrainingJobCategory">
@@ -54,20 +63,20 @@
             </if>
 
             <if test="updatedBy != null">
-                UPDATED_BY = #{updatedBy}
+                UPDATED_BY = #{updatedBy},
             </if>
+
+            UPDATED_AT = NOW()
         </set>
 
-        UPDATED_AT = NOW()
-
-        WHERE TJC_ID = #{trainingJobCategoryId}
+        WHERE TRAINING_JOB_CATEGORY_ID = #{trainingJobCategoryId}
 
     </update>
 
     <delete id="deleteTrainingJobCategory">
 
         DELETE FROM TRAINING_JOB_CATEGORY
-        WHERE TJC_ID = #{trainingJobCategoryId}
+        WHERE TRAINING_JOB_CATEGORY_ID = #{trainingJobCategoryId}
 
     </delete>
 </mapper>

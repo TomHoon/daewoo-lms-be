@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daewoo.lms.training.admission.mapper.AdmissionMapper">
+    <select id="lockBatch" resultType="long">
+        SELECT BATCH_ID FROM COURSE_BATCH WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} FOR UPDATE
+    </select>
+    <select id="batches" resultType="com.daewoo.lms.training.admission.dto.AdmissionBatchOptionDTO">
+        SELECT b.COURSE_ID, b.BATCH_ID, c.COURSE_NAME, b.BATCH_NAME, b.CAMPUS_ID, b.START_DATE, b.END_DATE
+        FROM COURSE_BATCH b JOIN COURSE c ON c.COURSE_ID = b.COURSE_ID
+        WHERE c.USE_YN = 'Y' AND COALESCE(b.STATUS, '') NOT IN ('DRAFT', '임시등록')
+        <if test="trainingJobCategoryId != null">AND c.TRAINING_JOB_CATEGORY_ID = #{trainingJobCategoryId}</if>
+        <if test="educationCategoryId != null">AND c.EDUCATION_CATEGORY_ID = #{educationCategoryId}</if>
+        ORDER BY b.START_DATE DESC, b.COURSE_ID DESC, b.BATCH_ID DESC
+    </select>
+    <select id="applications" resultType="com.daewoo.lms.training.admission.dto.AdmissionApplicationDTO">
+        SELECT * FROM ADMISSION_APPLICATION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+        <if test="keyword != null and keyword != ''">AND (LOCATE(#{keyword}, APPLICANT_NAME) &gt; 0 OR LOCATE(#{keyword}, PHONE) &gt; 0)</if>
+        <if test="status != null and status != ''">AND APPLICATION_STATUS = #{status}</if>
+        ORDER BY APPLICATION_ID DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="application" resultType="com.daewoo.lms.training.admission.dto.AdmissionApplicationDTO">
+        SELECT * FROM ADMISSION_APPLICATION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND APPLICATION_ID = #{applicationId}
+    </select>
+    <select id="nextApplicationId" resultType="long">
+        SELECT COALESCE(MAX(APPLICATION_ID), 0) + 1 FROM ADMISSION_APPLICATION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId}
+    </select>
+    <select id="duplicate" resultType="int">
+        SELECT COUNT(*) FROM ADMISSION_APPLICATION WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND
+        (TRAINEE_ID = #{traineeId} OR (TRIM(APPLICANT_NAME) = #{applicantName} AND BIRTH_DATE = #{birthDate} AND REGEXP_REPLACE(COALESCE(PHONE, ''), '[^0-9]', '') = #{phone}))
+        <if test="applicationId != null">AND APPLICATION_ID != #{applicationId}</if>
+    </select>
+    <select id="enrollmentCount" resultType="int">
+        SELECT COUNT(*) FROM COURSE_TRAINEE WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND TRAINEE_ID = #{traineeId}
+    </select>
+    <insert id="insertApplication" >
+        INSERT INTO ADMISSION_APPLICATION
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">COURSE_ID,</if>
+            <if test="batchId != null">BATCH_ID,</if>
+            <if test="applicationId != null">APPLICATION_ID,</if>
+            <if test="traineeId != null">TRAINEE_ID,</if>
+            <if test="sourceUserId != null">SOURCE_USER_ID,</if>
+            <if test="sourceTraineeId != null">SOURCE_TRAINEE_ID,</if>
+            <if test="inputType != null">INPUT_TYPE,</if>
+            <if test="applicationStatus != null">APPLICATION_STATUS,</if>
+            <if test="approvalStatus != null">APPROVAL_STATUS,</if>
+            <if test="applicantName != null">APPLICANT_NAME,</if>
+            <if test="birthDate != null">BIRTH_DATE,</if>
+            <if test="gender != null">GENDER,</if>
+            <if test="nationalityType != null">NATIONALITY_TYPE,</if>
+            <if test="phone != null">PHONE,</if>
+            <if test="extraPhone != null">EXTRA_PHONE,</if>
+            <if test="email != null">EMAIL,</if>
+            <if test="zipCode != null">ZIP_CODE,</if>
+            <if test="region != null">REGION,</if>
+            <if test="address != null">ADDRESS,</if>
+            <if test="addressDetail != null">ADDRESS_DETAIL,</if>
+            <if test="photoFileId != null">PHOTO_FILE_ID,</if>
+            <if test="lastSchoolName != null">LAST_SCHOOL_NAME,</if>
+            <if test="educationLevel != null">EDUCATION_LEVEL,</if>
+            <if test="graduationType != null">GRADUATION_TYPE,</if>
+            <if test="applyRoute != null">APPLY_ROUTE,</if>
+            <if test="receptionMethod != null">RECEPTION_METHOD,</if>
+            <if test="applicantMessage != null">APPLICANT_MESSAGE,</if>
+            <if test="employmentSupportType != null">EMPLOYMENT_SUPPORT_TYPE,</if>
+            <if test="employmentSupportCenter != null">EMPLOYMENT_SUPPORT_CENTER,</if>
+            <if test="employmentSupportManager != null">EMPLOYMENT_SUPPORT_MANAGER,</if>
+            <if test="employmentSupportPhone != null">EMPLOYMENT_SUPPORT_PHONE,</if>
+            <if test="preTestYn != null">PRE_TEST_YN,</if>
+            <if test="applicationDate != null">APPLICATION_DATE,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="applicationId != null">#{applicationId},</if>
+            <if test="traineeId != null">#{traineeId},</if>
+            <if test="sourceUserId != null">#{sourceUserId},</if>
+            <if test="sourceTraineeId != null">#{sourceTraineeId},</if>
+            <if test="inputType != null">#{inputType},</if>
+            <if test="applicationStatus != null">#{applicationStatus},</if>
+            <if test="approvalStatus != null">#{approvalStatus},</if>
+            <if test="applicantName != null">#{applicantName},</if>
+            <if test="birthDate != null">#{birthDate},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="nationalityType != null">#{nationalityType},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="extraPhone != null">#{extraPhone},</if>
+            <if test="email != null">#{email},</if>
+            <if test="zipCode != null">#{zipCode},</if>
+            <if test="region != null">#{region},</if>
+            <if test="address != null">#{address},</if>
+            <if test="addressDetail != null">#{addressDetail},</if>
+            <if test="photoFileId != null">#{photoFileId},</if>
+            <if test="lastSchoolName != null">#{lastSchoolName},</if>
+            <if test="educationLevel != null">#{educationLevel},</if>
+            <if test="graduationType != null">#{graduationType},</if>
+            <if test="applyRoute != null">#{applyRoute},</if>
+            <if test="receptionMethod != null">#{receptionMethod},</if>
+            <if test="applicantMessage != null">#{applicantMessage},</if>
+            <if test="employmentSupportType != null">#{employmentSupportType},</if>
+            <if test="employmentSupportCenter != null">#{employmentSupportCenter},</if>
+            <if test="employmentSupportManager != null">#{employmentSupportManager},</if>
+            <if test="employmentSupportPhone != null">#{employmentSupportPhone},</if>
+            <if test="preTestYn != null">#{preTestYn},</if>
+            <if test="applicationDate != null">#{applicationDate},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertTrainee" useGeneratedKeys="true" keyProperty="traineeId">
+        INSERT INTO TRAINEE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">USER_ID,</if>
+            <if test="traineeNo != null">TRAINEE_NO,</if>
+            <if test="name != null">NAME,</if>
+            <if test="birthDate != null">BIRTH_DATE,</if>
+            <if test="gender != null">GENDER,</if>
+            <if test="phone != null">PHONE,</if>
+            <if test="email != null">EMAIL,</if>
+            <if test="address != null">ADDRESS,</if>
+            <if test="status != null">STATUS,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="traineeNo != null">#{traineeNo},</if>
+            <if test="name != null">#{name},</if>
+            <if test="birthDate != null">#{birthDate},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="email != null">#{email},</if>
+            <if test="address != null">#{address},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insertEnrollment" >
+        INSERT INTO COURSE_TRAINEE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">COURSE_ID,</if>
+            <if test="batchId != null">BATCH_ID,</if>
+            <if test="traineeId != null">TRAINEE_ID,</if>
+            <if test="applicationId != null">APPLICATION_ID,</if>
+            <if test="enrollDate != null">ENROLL_DATE,</if>
+            <if test="completeDate != null">COMPLETE_DATE,</if>
+            <if test="status != null">STATUS,</if>
+            <if test="studentRecordOpenYn != null">STUDENT_RECORD_OPEN_YN,</if>
+            <if test="createdBy != null">CREATED_BY,</if>
+            CREATED_AT
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="traineeId != null">#{traineeId},</if>
+            <if test="applicationId != null">#{applicationId},</if>
+            <if test="enrollDate != null">#{enrollDate},</if>
+            <if test="completeDate != null">#{completeDate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="studentRecordOpenYn != null">#{studentRecordOpenYn},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            NOW()
+        </trim>
+    </insert>
+    <update id="updateApplication" >
+        UPDATE ADMISSION_APPLICATION SET APPLICATION_STATUS = #{applicationStatus},
+            APPROVAL_STATUS = #{approvalStatus},
+            APPLICANT_NAME = #{applicantName},
+            BIRTH_DATE = #{birthDate},
+            GENDER = #{gender},
+            NATIONALITY_TYPE = #{nationalityType},
+            PHONE = #{phone},
+            EXTRA_PHONE = #{extraPhone},
+            EMAIL = #{email},
+            ZIP_CODE = #{zipCode},
+            REGION = #{region},
+            ADDRESS = #{address},
+            ADDRESS_DETAIL = #{addressDetail},
+            PHOTO_FILE_ID = #{photoFileId},
+            LAST_SCHOOL_NAME = #{lastSchoolName},
+            EDUCATION_LEVEL = #{educationLevel},
+            GRADUATION_TYPE = #{graduationType},
+            APPLY_ROUTE = #{applyRoute},
+            RECEPTION_METHOD = #{receptionMethod},
+            APPLICANT_MESSAGE = #{applicantMessage},
+            EMPLOYMENT_SUPPORT_TYPE = #{employmentSupportType},
+            EMPLOYMENT_SUPPORT_CENTER = #{employmentSupportCenter},
+            EMPLOYMENT_SUPPORT_MANAGER = #{employmentSupportManager},
+            EMPLOYMENT_SUPPORT_PHONE = #{employmentSupportPhone},
+            PRE_TEST_YN = #{preTestYn},
+            APPLICATION_DATE = #{applicationDate},
+            UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND APPLICATION_ID = #{applicationId}
+    </update>
+    <update id="cancel" >
+        UPDATE ADMISSION_APPLICATION SET APPLICATION_STATUS = 'CANCEL', UPDATED_BY = #{updatedBy}, UPDATED_AT = NOW() WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND APPLICATION_ID = #{applicationId}
+    </update>
+    <select id="trainee" resultType="com.daewoo.lms.training.admission.dto.AdmissionTraineeDTO">
+        SELECT TRAINEE_ID, USER_ID, TRAINEE_NO, NAME, BIRTH_DATE, GENDER, PHONE, EMAIL, ADDRESS, STATUS, CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY FROM TRAINEE WHERE TRAINEE_ID = #{traineeId}
+    </select>
+    <select id="trainees" resultType="com.daewoo.lms.training.admission.dto.AdmissionTraineeDTO">
+        SELECT TRAINEE_ID, USER_ID, TRAINEE_NO, NAME, BIRTH_DATE, GENDER, PHONE, EMAIL, ADDRESS, STATUS, CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY FROM TRAINEE WHERE 1 = 1 <if test="keyword != null and keyword != ''">AND (LOCATE(#{keyword}, NAME) &gt; 0 OR LOCATE(#{keyword}, PHONE) &gt; 0)</if> ORDER BY TRAINEE_ID DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="traineesByUser" resultType="com.daewoo.lms.training.admission.dto.AdmissionTraineeDTO">
+        SELECT TRAINEE_ID, USER_ID, TRAINEE_NO, NAME, BIRTH_DATE, GENDER, PHONE, EMAIL, ADDRESS, STATUS, CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY FROM TRAINEE WHERE USER_ID = #{userId} ORDER BY TRAINEE_ID
+    </select>
+    <select id="traineesByIdentity" resultType="com.daewoo.lms.training.admission.dto.AdmissionTraineeDTO">
+        SELECT TRAINEE_ID, USER_ID, TRAINEE_NO, NAME, BIRTH_DATE, GENDER, PHONE, EMAIL, ADDRESS, STATUS, CREATED_AT, CREATED_BY, UPDATED_AT, UPDATED_BY FROM TRAINEE WHERE TRIM(NAME) = #{applicantName} AND BIRTH_DATE = #{birthDate} AND REGEXP_REPLACE(COALESCE(PHONE, ''), '[^0-9]', '') = #{phone} ORDER BY TRAINEE_ID
+    </select>
+    <select id="member" resultType="com.daewoo.lms.training.admission.dto.AdmissionMemberDTO">
+        SELECT USER_ID, USER_NAME AS name, PHONE, EMAIL FROM USERS WHERE USER_ID = #{userId} AND USE_YN = 'Y'
+    </select>
+    <select id="lockMember" resultType="com.daewoo.lms.training.admission.dto.AdmissionMemberDTO">
+        SELECT USER_ID, USER_NAME AS name, PHONE, EMAIL FROM USERS WHERE USER_ID = #{userId} AND USE_YN = 'Y' FOR UPDATE
+    </select>
+    <select id="members" resultType="com.daewoo.lms.training.admission.dto.AdmissionMemberDTO">
+        SELECT USER_ID, USER_NAME AS name, PHONE, EMAIL FROM USERS WHERE USE_YN = 'Y' <if test="keyword != null and keyword != ''">AND (LOCATE(#{keyword}, USER_NAME) &gt; 0 OR LOCATE(#{keyword}, PHONE) &gt; 0)</if> ORDER BY USER_ID DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="enrollment" resultType="com.daewoo.lms.training.admission.dto.AdmissionEnrollmentDTO">
+        SELECT * FROM COURSE_TRAINEE WHERE COURSE_ID = #{courseId} AND BATCH_ID = #{batchId} AND TRAINEE_ID = #{traineeId}
+    </select>
+</mapper>
