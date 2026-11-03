@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.daewoo.lms.training.trainingJobCategory.mapper.TrainingJobCategoryMapper">
+
+    <select id="getMonthAttendance">
+    </select>
+
+    <insert id="createTrainingJobCategory">
+        INSERT INTO TRAINING_JOB_CATEGORY (
+            CATEGORY_NAME,
+            SORT_ORDER,
+            INCUMBENT_YN,
+            HIDDEN_YN,
+            USE_YN,
+            CREATED_AT,
+            CREATED_BY
+        )
+        VALUES (
+            #{categoryName},
+            #{sortOrder},
+            #{incumbentYn},
+            #{hiddenYn},
+            #{useYn},
+            NOW(),
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateTrainingJobCategory">
+
+        UPDATE TRAINING_JOB_CATEGORY
+
+        <set>
+            <if test="categoryName != null and categoryName != ''">
+                CATEGORY_NAME = #{categoryName},
+            </if>
+
+            <if test="sortOrder != null">
+                SORT_ORDER = #{sortOrder},
+            </if>
+
+            <if test="incumbentYn != null and incumbentYn != ''">
+                INCUMBENT_YN = #{incumbentYn},
+            </if>
+
+            <if test="hiddenYn != null and hiddenYn != ''">
+                HIDDEN_YN = #{hiddenYn},
+            </if>
+
+            <if test="useYn != null and useYn != ''">
+                USE_YN = #{useYn},
+            </if>
+
+            <if test="updatedBy != null">
+                UPDATED_BY = #{updatedBy}
+            </if>
+        </set>
+
+        UPDATED_AT = NOW()
+
+        WHERE TJC_ID = #{trainingJobCategoryId}
+
+    </update>
+
+    <delete id="deleteTrainingJobCategory">
+
+        DELETE FROM TRAINING_JOB_CATEGORY
+        WHERE TJC_ID = #{trainingJobCategoryId}
+
+    </delete>
+</mapper>

@@ -20,12 +20,12 @@ spring:
     properties:
       hibernate:
         format_sql: true
-#mybatis:
-#  mapper-locations: classpath:/mapper/**/*.xml #????
-#  type-aliases-package: com.daewoo.lms.training #xml??? ????, resultType ?? ???
-#  configuration: #?????
-#    map-underscore-to-camel-case: true
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml #????
+  type-aliases-package: com.daewoo.lms.training #xml??? ????, resultType ?? ???
+  configuration: #?????
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 server:
   port: 33000
